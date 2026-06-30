@@ -8,16 +8,11 @@ var savedRuler = app.preferences.rulerUnits;
 app.preferences.rulerUnits = Units.PIXELS;
 var doc = app.activeDocument;
 
-// --- НАСТРОЙКИ (SETTINGS) ---
-var blockWidthPercent = 30; // Ширина текстового блока (30%)
-var marginPercent = 3;      // Отступ от края (3%)
 
-// Шрифты (Основной и Жирный)
 var fontMain = "HelveticaNeue";
 var fontBold = "HelveticaNeue-Bold";
 // ----------------------------
 
-// СБОР ДАННЫХ (DATA COLLECTION)
 var w = doc.width.value;
 var h = doc.height.value;
 var minSide = Math.min(w, h);
@@ -30,19 +25,13 @@ var ppcmRes = ppiRes / 2.54;
 var ratio = w / h;
 var docName = doc.name;
 
-// Исправленный расчет физических размеров (Real Physical Dimensions)
-// В v1 было деление на 72, что неверно для печати. Теперь делим на ppiRes.
-var wMetric = (w / ppiRes) * 2.54; // Ширина в см
-var hInches = h / ppiRes;          // Высота в дюймах
 
-// Доп. инфо: Цветовой режим и профиль
 var docMode = doc.mode.toString().replace("DocumentMode.", "");
 var docDepth = doc.bitsPerChannel.toString().replace("BitsPerChannelType.", "").replace("EIGHT", "8").replace("SIXTEEN", "16");
 var docProfile = "Untagged";
 try { docProfile = doc.colorProfileName; } catch (e) { }
 
 
-// ФОРМИРОВАНИЕ ТЕКСТА (TEXT CONTENT)
 var docInfo =
     'Name: ' + docName + '\r' +
     'Dimensions: ' + w + ' x ' + h + ' px' + '\r' +
@@ -54,34 +43,27 @@ var docInfo =
     aspect_ratio(w / h, 50).toString().replace(',', ':') + ' (Farey)';
 
 
-// СОЗДАНИЕ СЛОЯ (CREATE LAYER)
 var textLayer = doc.artLayers.add();
 textLayer.kind = LayerKind.TEXT;
 textLayer.name = "Document Info";
 var textItem = textLayer.textItem;
 textItem.contents = docInfo;
 
-// Установка шрифта с защитой от ошибок (Safe Font Setting)
 try {
     textItem.font = fontMain;
 } catch (e) {
-    textItem.font = "ArialMT"; // Если Helvetica нет, ставим Arial
 }
 
 textItem.justification = Justification.LEFT;
-textItem.size = 20; // Временный размер
 var textColor = new SolidColor();
 textColor.rgb.red = 51; textColor.rgb.green = 51; textColor.rgb.blue = 51;
 textItem.color = textColor;
 
 
-// ЖИРНЫЙ ТЕКСТ (BOLD FORMATTING)
-// Список заголовков, которые нужно выделить
 var labelsToBold = ["Name:", "Dimensions:", "Resolution:", "Mode/Profile:", "Megapixel Value:", "Aspect Ratio:"];
 formatWords(textLayer, labelsToBold, fontBold);
 
 
-// АВТО-МАСШТАБИРОВАНИЕ (AUTO-FIT 30%)
 doc.selection.deselect();
 var targetWidth = minSide * (blockWidthPercent / 100);
 var currentGeo = textLayer.bounds;
@@ -93,7 +75,6 @@ if (currentWidth > 0) {
 }
 
 
-// ПОЗИЦИОНИРОВАНИЕ (POSITIONING BOTTOM-LEFT)
 var margin = minSide * (marginPercent / 100);
 var finalGeo = textLayer.bounds;
 var deltaX = margin - finalGeo[0].value;
@@ -101,11 +82,9 @@ var deltaY = (h - margin) - finalGeo[3].value;
 
 textLayer.translate(deltaX, deltaY);
 
-// Восстановление настроек
 app.preferences.rulerUnits = savedRuler;
 
 
-// --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (FUNCTIONS) ---
 
 function gcd(a, b) {
     return (b == 0) ? a : gcd(b, a % b);
@@ -126,7 +105,6 @@ function aspect_ratio(val, lim) {
     }
 }
 
-// Функция поиска слов для выделения
 function formatWords(layer, wordsArray, boldFontName) {
     var textContent = layer.textItem.contents;
     for (var w = 0; w < wordsArray.length; w++) {
@@ -141,7 +119,6 @@ function formatWords(layer, wordsArray, boldFontName) {
     }
 }
 
-// Функция Action Manager для применения шрифта к части текста
 function applyStyleToRange(layer, from, to, fontName) {
     try {
         var doc = app.activeDocument; var activeL = doc.activeLayer; doc.activeLayer = layer;
@@ -161,6 +138,5 @@ function applyStyleToRange(layer, from, to, fontName) {
         desc.putObject(idT, idTxLr, descT); executeAction(idsetd, desc, DialogModes.NO);
         doc.activeLayer = activeL;
     } catch (e) {
-        // Ошибки игнорируются (Silent Fail)
     }
 }
